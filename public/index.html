@@ -1,1 +1,461 @@
-<html></html>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Mathe-Abenteuer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; min-height: 100vh; }
+    #app { max-width: 700px; margin: 0 auto; padding: 1rem; min-height: 100vh; }
+
+    .screen { display: none; }
+    .screen.active { display: flex; flex-direction: column; }
+
+    /* START SCREEN */
+    #start-screen { align-items: center; justify-content: center; gap: 1.5rem; padding: 2rem 1rem; min-height: 95vh; }
+    .app-title { font-size: 32px; font-weight: 600; color: #1a1a1a; text-align: center; }
+    .app-subtitle { font-size: 16px; color: #666; text-align: center; margin-top: 6px; }
+    .star-row { font-size: 28px; letter-spacing: 6px; color: #EF9F27; }
+    .start-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 1.1rem; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .field-label { font-size: 14px; color: #555; margin-bottom: 6px; display: block; font-weight: 500; }
+    .start-card input, .start-card select { width: 100%; font-size: 17px; padding: 11px 14px; border-radius: 10px; border: 1px solid #ddd; font-family: inherit; background: #fafafa; color: #1a1a1a; }
+    .start-card input:focus, .start-card select:focus { outline: none; border-color: #1D9E75; background: #fff; }
+    .theme-input-row { display: flex; gap: 8px; }
+    .theme-input-row input { flex: 1; font-size: 15px; }
+    .btn-add-tag { padding: 11px 14px; font-size: 14px; background: #1D9E75; color: #fff; border: none; border-radius: 10px; cursor: pointer; white-space: nowrap; font-family: inherit; }
+    .btn-add-tag:hover { background: #0F6E56; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 8px; min-height: 20px; }
+    .tag { background: #E1F5EE; color: #0F6E56; border-radius: 20px; padding: 5px 12px; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+    .tag-remove { cursor: pointer; font-size: 17px; line-height: 1; color: #0F6E56; background: none; border: none; padding: 0; }
+    .tag-hint { font-size: 13px; color: #999; }
+    .btn-start { width: 100%; padding: 15px; font-size: 18px; font-weight: 600; background: #1D9E75; color: #fff; border: none; border-radius: 12px; cursor: pointer; margin-top: 0.25rem; font-family: inherit; }
+    .btn-start:disabled { background: #ccc; color: #999; cursor: default; }
+    .btn-start:not(:disabled):hover { background: #0F6E56; }
+
+    /* GAME SCREEN */
+    #game-screen { gap: 0; min-height: 95vh; }
+    .game-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0.25rem; border-bottom: 1px solid #e5e5e5; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+    .player-badge { background: #E1F5EE; color: #0F6E56; border-radius: 10px; padding: 6px 14px; font-size: 15px; font-weight: 600; }
+    .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .theme-badge { background: #FAEEDA; color: #854F0B; border-radius: 10px; padding: 5px 10px; font-size: 13px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .milestone-row { display: flex; gap: 6px; align-items: center; }
+    .ms-dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #ccc; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #999; font-weight: 600; }
+    .ms-dot.done { background: #1D9E75; border-color: #1D9E75; color: #fff; }
+    .ms-dot.active { background: #EF9F27; border-color: #EF9F27; color: #fff; }
+    .btn-restart { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 6px 12px; font-size: 13px; color: #666; cursor: pointer; font-family: inherit; }
+    .btn-restart:hover { background: #f5f5f5; }
+
+    .messages-area { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; padding: 0 0.1rem; min-height: 340px; max-height: 420px; }
+
+    .msg-group { display: flex; flex-direction: column; gap: 6px; max-width: 92%; }
+    .msg-group.ai { align-self: flex-start; }
+
+    .msg { padding: 11px 15px; border-radius: 16px; font-size: 15px; line-height: 1.65; white-space: pre-wrap; }
+    .msg.ai-praise { background: #E6F1FB; color: #0C447C; border-bottom-left-radius: 4px; }
+    .msg.ai-task { background: #FAEEDA; color: #2a1800; border-radius: 16px; padding: 15px 17px; }
+    .msg.ai-task .task-label { font-size: 11px; font-weight: 700; color: #854F0B; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 7px; }
+    .msg.ai-task .task-text { font-size: 19px; line-height: 1.7; }
+    .msg.ai-tip { background: #EAF3DE; color: #173404; border-top-left-radius: 4px; font-size: 14px; }
+    .msg.ai-tip .tip-label { font-size: 11px; font-weight: 700; color: #3B6D11; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+    .msg.ai-plain { background: #E6F1FB; color: #0C447C; border-bottom-left-radius: 4px; }
+    .msg.user { background: #EAF3DE; color: #173404; border-bottom-right-radius: 4px; align-self: flex-end; max-width: 80%; font-size: 16px; }
+    .msg.loading { background: #f0f0f0; color: #999; font-style: italic; align-self: flex-start; font-size: 14px; }
+
+    .result-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 16px; padding: 1.25rem; margin-top: 0.75rem; width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .result-card h3 { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 1rem; }
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+    .result-stat { background: #f7f7f5; border-radius: 10px; padding: 10px 12px; text-align: center; }
+    .result-stat .stat-val { font-size: 22px; font-weight: 600; color: #1a1a1a; }
+    .result-stat .stat-lbl { font-size: 12px; color: #888; margin-top: 2px; }
+    .result-ms-row { display: flex; flex-direction: column; gap: 6px; }
+    .result-ms-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #555; }
+    .result-ms-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .result-ms-dot.ok { background: #1D9E75; }
+    .result-ms-dot.retry { background: #EF9F27; }
+    .btn-new-game { margin-top: 1rem; width: 100%; padding: 13px; font-size: 16px; font-weight: 600; background: #1D9E75; color: #fff; border: none; border-radius: 12px; cursor: pointer; font-family: inherit; }
+    .btn-new-game:hover { background: #0F6E56; }
+
+    .input-area { display: flex; gap: 10px; padding: 0.75rem 0 0.25rem; border-top: 1px solid #e5e5e5; margin-top: 0.75rem; }
+    .input-area input { flex: 1; font-size: 18px; padding: 12px 15px; border-radius: 12px; border: 1px solid #ddd; font-family: inherit; background: #fafafa; color: #1a1a1a; }
+    .input-area input:focus { outline: none; border-color: #185FA5; background: #fff; }
+    .btn-send { padding: 12px 22px; font-size: 16px; font-weight: 600; background: #185FA5; color: #fff; border: none; border-radius: 12px; cursor: pointer; font-family: inherit; }
+    .btn-send:disabled { background: #ccc; color: #999; cursor: default; }
+    .btn-send:not(:disabled):hover { background: #0C447C; }
+    .error-msg { font-size: 13px; color: #c0392b; padding: 0.25rem 0; text-align: center; min-height: 20px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="start-screen" class="screen active">
+    <div class="star-row">★ ★ ★</div>
+    <div>
+      <div class="app-title">Mathe-Abenteuer</div>
+      <div class="app-subtitle">Dein Rechentrainer für die Grundschule</div>
+    </div>
+    <div class="start-card">
+      <div>
+        <label class="field-label" for="name-input">Wie heißt du?</label>
+        <input type="text" id="name-input" placeholder="Dein Name..." autocomplete="off" />
+      </div>
+      <div>
+        <label class="field-label" for="class-select">In welche Klasse gehst du?</label>
+        <select id="class-select">
+          <option value="">Bitte auswählen...</option>
+          <option value="1">Klasse 1</option>
+          <option value="2">Klasse 2</option>
+          <option value="3">Klasse 3</option>
+          <option value="4">Klasse 4</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Über was soll die Geschichte handeln?</label>
+        <div class="theme-input-row">
+          <input type="text" id="theme-input" placeholder="z.B. Dinos, Weltraum, Fußball..." autocomplete="off" />
+          <button class="btn-add-tag" id="btn-add-tag">+ Hinzufügen</button>
+        </div>
+        <div style="margin-top:10px">
+          <div class="tag-row" id="tag-row"></div>
+          <div class="tag-hint" id="tag-hint" style="margin-top:6px">Noch kein Thema – die KI wählt selbst.</div>
+        </div>
+      </div>
+      <button class="btn-start" id="btn-start" disabled>Los geht's!</button>
+    </div>
+    <div id="start-error" class="error-msg"></div>
+  </div>
+
+  <div id="game-screen" class="screen">
+    <div class="game-header">
+      <div class="player-badge" id="player-badge"></div>
+      <div class="header-right">
+        <div class="theme-badge" id="theme-badge"></div>
+        <div class="milestone-row" id="milestone-row"></div>
+        <button class="btn-restart" id="btn-restart">↺ Neu starten</button>
+      </div>
+    </div>
+    <div class="messages-area" id="messages-area"></div>
+    <div class="input-area">
+      <input type="text" id="answer-input" placeholder="Deine Antwort..." autocomplete="off" inputmode="numeric" />
+      <button class="btn-send" id="btn-send">Senden</button>
+    </div>
+    <div id="game-error" class="error-msg"></div>
+  </div>
+</div>
+
+<script>
+const PROXY_URL = 'https://mathe-abenteuer-proxy.vercel.app/;
+
+const SYSTEM_PROMPT = `# ROLE AND OBJECTIVE
+You are an expert AI Math Tutor and Content Creator trained in the Bavarian primary school curriculum (LehrplanPLUS, Grades 1-4).
+
+# THEME INSTRUCTION
+Weave the user's theme keywords creatively into every task, narrative, and character across all 5 milestones.
+
+# SESSION MANAGEMENT
+Track progress via conversation history. 5 milestones total.
+- Correct answer: Advance to Milestone X+1, increase difficulty.
+- Incorrect answer: Stay at current Milestone, use Error Handling, lower difficulty.
+
+# ADAPTIVE DIFFICULTY
+- LEVEL UP: Larger numbers, Zehnerübergänge, multi-step problems.
+- LEVEL DOWN: Glatte Zehner, remove Zehnerübergang, simpler structure.
+
+# CREATIVE FORMATS
+Use: The Detective / The Optimizer / The Truth-Finder / The Pattern-Master.
+
+# HUMOR ENGINE
+- Grade 1+2: 2-3 short sentences, slapstick humor.
+- Grade 3+4: 4-5 sentences, wordplay, mild absurdity.
+
+# CRITICAL: TRIPLE-CHECK ALL MATH before generating output.
+
+# OUTPUT FORMAT — MANDATORY STRUCTURE
+Your response MUST always contain these exact markers:
+
+--- INTERNAL THOUGHTS ---
+[hidden: milestone tracking, math sandbox, difficulty decision]
+--- END INTERNAL ---
+
+--- PRAISE ---
+[1-2 sentences: celebrate correct answer OR gentle oops-moment for wrong answer]
+--- END PRAISE ---
+
+--- TASK ---
+[the math word problem, formatted clearly, bold numbers with **asterisks**]
+--- END TASK ---
+
+--- TIP ---
+[short pedagogical hint]
+--- END TIP ---
+
+EXCEPTION: If Milestone 5 is solved correctly, replace PRAISE/TASK/TIP with:
+--- FINAL ---
+[victory speech + Urkunde with child's name and bayerisches Lob]
+--- END FINAL ---
+
+EXCEPTION: First message of session — skip PRAISE, go straight to TASK + TIP.`;
+
+let state = {
+  name: '', grade: '', themes: [], messages: [],
+  milestone: 1, loading: false, sessionDone: false,
+  attempts: [0,0,0,0,0], startTime: null
+};
+
+const nameInput = document.getElementById('name-input');
+const classSelect = document.getElementById('class-select');
+const themeInput = document.getElementById('theme-input');
+const btnAddTag = document.getElementById('btn-add-tag');
+const tagRow = document.getElementById('tag-row');
+const tagHint = document.getElementById('tag-hint');
+const btnStart = document.getElementById('btn-start');
+const messagesArea = document.getElementById('messages-area');
+const answerInput = document.getElementById('answer-input');
+const btnSend = document.getElementById('btn-send');
+const playerBadge = document.getElementById('player-badge');
+const themeBadge = document.getElementById('theme-badge');
+const milestoneRow = document.getElementById('milestone-row');
+const gameError = document.getElementById('game-error');
+const btnRestart = document.getElementById('btn-restart');
+
+function validateStart() {
+  btnStart.disabled = !(nameInput.value.trim() && classSelect.value);
+}
+nameInput.addEventListener('input', validateStart);
+classSelect.addEventListener('change', validateStart);
+
+function renderTags() {
+  tagRow.innerHTML = '';
+  state.themes.forEach((t, i) => {
+    const tag = document.createElement('div');
+    tag.className = 'tag';
+    tag.innerHTML = t + '<button class="tag-remove" aria-label="Entfernen">×</button>';
+    tag.querySelector('.tag-remove').addEventListener('click', () => {
+      state.themes.splice(i, 1); renderTags();
+    });
+    tagRow.appendChild(tag);
+  });
+  tagHint.style.display = state.themes.length ? 'none' : 'block';
+}
+
+function addTag() {
+  const val = themeInput.value.trim();
+  if (!val || state.themes.length >= 5 || state.themes.includes(val)) {
+    themeInput.value = ''; return;
+  }
+  state.themes.push(val); renderTags(); themeInput.value = ''; themeInput.focus();
+}
+btnAddTag.addEventListener('click', addTag);
+themeInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } });
+
+function resetState() {
+  state = { name:'', grade:'', themes:[], messages:[], milestone:1, loading:false, sessionDone:false, attempts:[0,0,0,0,0], startTime:null };
+}
+
+btnRestart.addEventListener('click', () => {
+  document.getElementById('game-screen').classList.remove('active');
+  document.getElementById('start-screen').classList.add('active');
+  resetState();
+  messagesArea.innerHTML = '';
+  gameError.textContent = '';
+  answerInput.value = '';
+  answerInput.disabled = false;
+  btnSend.disabled = false;
+});
+
+btnStart.addEventListener('click', startGame);
+
+async function startGame() {
+  state.name = nameInput.value.trim();
+  state.grade = classSelect.value;
+  state.startTime = Date.now();
+  document.getElementById('start-screen').classList.remove('active');
+  document.getElementById('game-screen').classList.add('active');
+  playerBadge.textContent = state.name + ' · Klasse ' + state.grade;
+  const themeStr = state.themes.length ? state.themes.join(', ') : 'freie Themenwahl';
+  themeBadge.textContent = '🎨 ' + themeStr;
+  renderMilestones();
+  const themeInfo = state.themes.length
+    ? 'Themen-Schlüsselwörter: ' + state.themes.join(', ') + '. Verwende diese in allen 5 Milestones.'
+    : 'Kein Thema – wähle selbst ein kreatives Thema.';
+  await sendToAI('Starte Session für ' + state.name + ', Klasse ' + state.grade + '. ' + themeInfo + ' Beginne mit Milestone 1 von 5.');
+}
+
+function renderMilestones() {
+  milestoneRow.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'ms-dot' + (i < state.milestone ? ' done' : i === state.milestone ? ' active' : '');
+    dot.textContent = i < state.milestone ? '✓' : i;
+    milestoneRow.appendChild(dot);
+  }
+}
+
+function extract(text, tag) {
+  const open = '--- ' + tag + ' ---', close = '--- END ' + tag + ' ---';
+  const s = text.indexOf(open), e = text.indexOf(close);
+  if (s === -1 || e === -1) return null;
+  return text.slice(s + open.length, e).trim();
+}
+
+function addBubble(text, cls) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + cls;
+  div.textContent = text;
+  messagesArea.appendChild(div);
+  messagesArea.scrollTop = messagesArea.scrollHeight;
+  return div;
+}
+
+function parseAndRender(rawText) {
+  const praise = extract(rawText, 'PRAISE');
+  const task = extract(rawText, 'TASK');
+  const tip = extract(rawText, 'TIP');
+  const final = extract(rawText, 'FINAL');
+
+  if (final) {
+    addBubble(final, 'ai-plain');
+    renderResultCard();
+    answerInput.disabled = true;
+    btnSend.disabled = true;
+    state.sessionDone = true;
+    return;
+  }
+
+  const group = document.createElement('div');
+  group.className = 'msg-group ai';
+
+  if (praise) {
+    const b = document.createElement('div');
+    b.className = 'msg ai-praise';
+    b.textContent = praise;
+    group.appendChild(b);
+  }
+  if (task) {
+    const b = document.createElement('div');
+    b.className = 'msg ai-task';
+    const lbl = document.createElement('div');
+    lbl.className = 'task-label';
+    lbl.textContent = 'Deine Aufgabe';
+    const txt = document.createElement('div');
+    txt.className = 'task-text';
+    txt.textContent = task.replace(/\*\*([^*]+)\*\*/g, '$1');
+    b.appendChild(lbl); b.appendChild(txt);
+    group.appendChild(b);
+  }
+  if (tip) {
+    const b = document.createElement('div');
+    b.className = 'msg ai-tip';
+    const lbl = document.createElement('div');
+    lbl.className = 'tip-label';
+    lbl.textContent = 'Tipp';
+    const txt = document.createElement('div');
+    txt.textContent = tip;
+    b.appendChild(lbl); b.appendChild(txt);
+    group.appendChild(b);
+  }
+
+  if (group.children.length === 0) {
+    const stripped = rawText.replace(/--- INTERNAL THOUGHTS ---[\s\S]*?--- END INTERNAL ---/, '').trim();
+    addBubble(stripped, 'ai-plain');
+  } else {
+    messagesArea.appendChild(group);
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+  }
+}
+
+function detectMilestone(rawText) {
+  const m = rawText.match(/Milestone\s+(\d)\s+(?:von|of)\s+5/i);
+  if (m) {
+    const n = parseInt(m[1]);
+    if (n > state.milestone) state.milestone = n;
+  }
+  if (rawText.includes('--- FINAL ---')) state.milestone = 6;
+}
+
+function renderResultCard() {
+  const elapsed = Math.round((Date.now() - state.startTime) / 60000);
+  const totalAttempts = state.attempts.reduce((a, b) => a + b, 0);
+  const card = document.createElement('div');
+  card.className = 'result-card';
+  const msItems = state.attempts.map((a, i) => {
+    const dot = a > 0 ? 'retry' : 'ok';
+    const label = a > 0
+      ? 'Milestone ' + (i+1) + ' (' + a + ' Versuch' + (a > 1 ? 'e' : '') + ' extra)'
+      : 'Milestone ' + (i+1) + ' (direkt geschafft)';
+    return '<div class="result-ms-item"><div class="result-ms-dot ' + dot + '"></div><span>' + label + '</span></div>';
+  }).join('');
+  card.innerHTML = '<h3>Deine Ergebnisse</h3>'
+    + '<div class="result-grid">'
+    + '<div class="result-stat"><div class="stat-val">5</div><div class="stat-lbl">Milestones</div></div>'
+    + '<div class="result-stat"><div class="stat-val">' + totalAttempts + '</div><div class="stat-lbl">Extra-Versuche</div></div>'
+    + '<div class="result-stat"><div class="stat-val">' + elapsed + ' min</div><div class="stat-lbl">Zeit</div></div>'
+    + '</div>'
+    + '<div class="result-ms-row">' + msItems + '</div>'
+    + '<button class="btn-new-game" id="btn-new-game">Neue Runde starten</button>';
+  messagesArea.appendChild(card);
+  messagesArea.scrollTop = messagesArea.scrollHeight;
+  card.querySelector('#btn-new-game').addEventListener('click', () => {
+    document.getElementById('game-screen').classList.remove('active');
+    document.getElementById('start-screen').classList.add('active');
+    resetState();
+    messagesArea.innerHTML = '';
+    gameError.textContent = '';
+    answerInput.disabled = false;
+    btnSend.disabled = false;
+  });
+}
+
+async function sendToAI(userText) {
+  if (state.loading || state.sessionDone) return;
+  state.loading = true;
+  btnSend.disabled = true;
+  answerInput.disabled = true;
+  gameError.textContent = '';
+  state.messages.push({ role: 'user', content: userText });
+  const loadingDiv = addBubble('...', 'loading');
+
+  try {
+    const response = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: state.messages
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || 'API-Fehler ' + response.status);
+    const rawText = data.content.map(b => b.text || '').join('');
+    detectMilestone(rawText);
+    state.messages.push({ role: 'assistant', content: rawText });
+    loadingDiv.remove();
+    parseAndRender(rawText);
+    renderMilestones();
+  } catch (err) {
+    loadingDiv.remove();
+    gameError.textContent = 'Fehler: ' + err.message;
+  }
+
+  state.loading = false;
+  if (!state.sessionDone) {
+    btnSend.disabled = false;
+    answerInput.disabled = false;
+    answerInput.focus();
+  }
+}
+
+function handleSend() {
+  const val = answerInput.value.trim();
+  if (!val || state.loading || state.sessionDone) return;
+  addBubble(val, 'user');
+  answerInput.value = '';
+  sendToAI(val);
+}
+
+btnSend.addEventListener('click', handleSend);
+answerInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleSend(); });
+</script>
+</body>
+</html>
